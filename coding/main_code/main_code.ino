@@ -12,7 +12,7 @@ const int motor[4] = {0b00000101, 0b00001001, 0b00001010, 0b00000110}; // Dreht 
 const int min_values[3] = {1,2,3}; // R,G,B  Minimalster Wert, um als Farbe erkannt zu werden
 
 // positions
-const int one_step = 1; // HIER WERT FÜR EINE POSITION EINGEBEN
+const int one_step = 341; // HIER WERT FÜR EINE POSITION EINGEBEN
 const int position_start = -1;
 
 const int color_steps[4][2]= { {1,3} , {2,2} , {3,1} , {4,0} };
@@ -43,18 +43,27 @@ void setup() {
     pinMode(i, OUTPUT);
 
   motorcontrol("M2", position_start);
+  Serial.begin(9600);
 }
 
 void loop() {
-  motorcontrol("M2", one_step); // Von Start zu Gold
-  motorcontrol("M1", position_start);
-  delay(500); // Kugel reinfallen lassen
-  motorcontrol("M1", one_step);
-  position_color = color_recognition();
-  motorcontrol("M2", one_step * color_steps[position_color][1]);
-  motorcontrol("M1", one_step * color_steps[position_color][0]);
+  motorcontrol("M1", one_step); // Von Start zu Gold
   motorcontrol("M2", position_start);
-}
+  delay(500); // Kugel reinfallen lassen
+  motorcontrol("M2", one_step);
+  position_color = color_recognition();
+  Serial.print("Position: ");
+  Serial.println(position_color);
+  motorcontrol("M1", one_step * color_steps[position_color][1]);
+  motorcontrol("M2", one_step * color_steps[position_color][0]);
+  Serial.println("Bis hier geschafft, jetzt Unendlichkeit");
+  motorcontrol("M1", position_start);
+} 
+/*
+void loop(){
+  motorcontrol("M2", position_start);
+  Serial.println("Top");
+} */
 
 int color_recognition(){
 
@@ -67,19 +76,19 @@ int color_recognition(){
   }
 
   // If color red gets recognized
-  if(color_values[0] >= min_values[0] || color_values[1] < min_values[1] || color_values[2] < min_values[2]){
+  if(color_values[0] >= min_values[0] && color_values[1] < min_values[1] && color_values[2] < min_values[2]){
     return 0;
   }
   // If color green gets recognized
-  else if(color_values[0] < min_values[0] || color_values[1] >= min_values[1] || color_values[2] < min_values[2]){
+  else if(color_values[0] < min_values[0] && color_values[1] >= min_values[1] && color_values[2] < min_values[2]){
     return 1;
   }
   // If color blue gets recognized
-  else if(color_values[0] < min_values[0] || color_values[1] < min_values[1] || color_values[2] >= min_values[2]){
+  else if(color_values[0] < min_values[0] && color_values[1] < min_values[1] && color_values[2] >= min_values[2]){
     return 2;
   }
   // If all colors are recognized
-  else if(color_values[0] >= min_values[0] || color_values[1] >= min_values[1] || color_values[2] >= min_values[2]){
+  else if(color_values[0] >= min_values[0] && color_values[1] >= min_values[1] && color_values[2] >= min_values[2]){
     return 3;
   }
   // If no color gets recognized (maybe error)
@@ -92,16 +101,16 @@ void motorcontrol(String _motor, int _position){
   if(_motor == "M1"){
     for(int i = 0; i<4; i++)
       active_motorpins[i] = motor1_pins[i];
-    active_light_barrier = light_barrier2;
+    active_light_barrier = light_barrier1;
   }
   else if(_motor == "M2"){
     for(int i = 0; i<4; i++)
       active_motorpins[i] = motor2_pins[i];
-      active_light_barrier = light_barrier2;
+      active_light_barrier = light_barrier1;
   }
 
   if(_position == position_start)
-    while(analogRead(active_light_barrier) <= 1){        // HIER WERT FINDEN, LICHTSCHRANKE
+    while(analogRead(active_light_barrier) >= 350){        // HIER WERT FINDEN, LICHTSCHRANKE
       move_motor();
     }
   else
