@@ -1,47 +1,63 @@
-/* Author: Niklas Kamm, Julian Krieger, Pascal Gläß
- * License: See github.com/KriegersBlog/color_sorting_machine
- *                                                                                      // LICHTSCHRANKE M2 wird gebraucht (schritte)
- * This code is optimized to work on a Arduino Uno R3 to manage
- * the whole color sorting process. For more information: See documentation
+/* Autor: Niklas Kamm, Julian Krieger, Pascal Gläß
+ * Lizenz: GNU General Public License V3 | Siehe github.com/KriegersBlog/color_sorting_machine/LICENSE
+ *                   
+ * Info: DE VARIANTE
+ *       Der Code ist für einen Arduino Uno R3 optimiert
+ *       Das Programm steuert die Farbsortiermaschine  
+ * Mehr Informationen: Siehe Dokumentation
  */
-// CONSTANT VARIABLES
 
-const int motor[4] = {0b00000101, 0b00001001, 0b00001010, 0b00000110}; // Dreht Motor im Uhrzeigersinn
+ /* Wichtige Information: 
+ *  Es gibt 2 Methoden, um mit der Farberkennung umzugehen. Pascal hat sich hierbei für die mit festen Werten
+ *  entschieden. Die Alternative ist, nur den höchsten Wert zu nehmen und dann davon auszugehen, es ist die Farbe.
+ *  Wir haben beide Versionen getestet, beide lieferten die gleichen Ergebnisse.
+ */
+ 
+// Konstanten
 
-// colors
-const int min_values[3] = {1,2,3}; // R,G,B  Minimalster Wert, um als Farbe erkannt zu werden
+const int motor[4] = {0b00000101, 0b00001001, 0b00001010, 0b00000110}; // Motoransteuerung
 
-// positions
-const int one_step = 1; // HIER WERT FÜR EINE POSITION EINGEBEN
-const int position_start = -1;
+// Vergleichswerte für Farberkennung | Werte: R,G,B | Minimalster Wert, um als Farbe X erkannt zu werden
+const int min_values[3] = {1,2,3};
 
-const int color_steps[4][2]= { {1,3} , {2,2} , {3,1} , {4,0} };
-// Anzahl Positionen, die ein Motor von seiner Position braucht: M1, M2  | ROT, GRUEN, BLAU, GOLD
+// Positionen
+const int one_step = 1; // Motorschritte um sich eine Position zu bewegen
+const int position_start = -1; // Startposition
+const int color_steps[4][2]= { {1,3} , {2,2} , {3,1} , {4,0} }; 
+// Erste Ziffer M1, Zweite Ziffer M2 | Blöcke: Rot/Grün/Blau/Gold
 
-// pins
-const byte motor1_pins[4] = {7, 5, 8, 6}; // IN3, IN1, IN4, IN2
-const byte motor2_pins[4] = {11, 9, 12, 10}; // L1, L2, L3, L4
-const byte leds[3] = {4,3,2}; // Red, Green, Blue
-const byte light_barrier1 = A1; // upper light barrier
-const byte light_barrier2 = A0; // lower light barrier
-const byte color_sensor = A2; // sensor for color recognition
+// Pinbelegung
+const byte motor1_pins[4] = {7, 5, 8, 6}; // IN3, IN1, IN4, IN2 | L1, L2, L3, L4
+const byte motor2_pins[4] = {11, 9, 12, 10};
+const byte leds[3] = {4,3,2}; // Rot, Grün, Blau
+const byte light_barrier1 = A1; // Sensor: Obere Lichtschranke
+const byte light_barrier2 = A0; // Sensor: Untere Lichtschranke
+const byte color_sensor = A2; // Sensor: Farberkennung
 
 
-//UNCONSTANT VARIABLES
+//Variablen
 
-int active_light_barrier;   // value: cached pin of the active light_barrier (dependent on active motor)
-int position_color;  // value: cached steps for the determined color // only for M1
-int color_values[3]; // value: cached input of A2
-byte active_motorpins[4];
+int active_light_barrier;  // Wert: Pin der aktiven Lichtschranke
+int position_color;  // Gespeicherte Schritt für die erkannte Farbe | M1
+int color_values[3]; // Werte: Ergebnisse der Farberkennung
+byte active_motorpins[4]; // Wert: Pins des aktiven Motors
 
+//--------------------------ARDUINO METHODEN----------------------------------//
 
 void setup() {
+
+  // PINKONFIGURATION
+
+  // Sensoren
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
   pinMode(A2, INPUT);
+
+  // Ausgaben
   for(int i = 2; i < 13; i++)
     pinMode(i, OUTPUT);
 
+  // Startposition herstellen
   motorcontrol("M2", position_start);
 }
 
@@ -56,6 +72,9 @@ void loop() {
   motorcontrol("M2", position_start);
 }
 
+//---------------------------EIGENE METHODEN----------------------------------//
+// FARBERKENNUNG | PASCAL GLÄß
+
 int color_recognition(){
 
   for(int i = 0; i<3; i++){
@@ -66,24 +85,24 @@ int color_recognition(){
     digitalWrite(leds[i], LOW);
   }
 
-  // If color red gets recognized
+  // Auf Farbe Rot testen
   if(color_values[0] >= min_values[0] || color_values[1] < min_values[1] || color_values[2] < min_values[2]){
     return 0;
   }
-  // If color green gets recognized
+  // Auf Farbe Grün testen
   else if(color_values[0] < min_values[0] || color_values[1] >= min_values[1] || color_values[2] < min_values[2]){
     return 1;
   }
-  // If color blue gets recognized
+  // Auf Farbe Blau testen
   else if(color_values[0] < min_values[0] || color_values[1] < min_values[1] || color_values[2] >= min_values[2]){
     return 2;
   }
-  // If all colors are recognized
+  // Auf Farbe Gold testen
   else if(color_values[0] >= min_values[0] || color_values[1] >= min_values[1] || color_values[2] >= min_values[2]){
     return 3;
   }
-  // If no color gets recognized (maybe error)
-  else return 1337;
+  // Falls keine Farbe erkannt wird | Fehler ausgeben | Farbe Gold wird gewählt (Aussortieren)
+  else return 3;
 }
 
 

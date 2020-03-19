@@ -1,4 +1,4 @@
--const byte led = 5; //Pin
+const byte led = 5; //Pin
 const byte sensor = A5; //Pin
 
 void setup() {
