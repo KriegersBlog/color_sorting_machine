@@ -59,18 +59,27 @@ void setup() {
 
   // Startposition herstellen
   motorcontrol("M2", position_start);
+  Serial.begin(9600);
 }
 
 void loop() {
-  motorcontrol("M2", one_step); // Von Start zu Gold
-  motorcontrol("M1", position_start);
-  delay(500); // Kugel reinfallen lassen
-  motorcontrol("M1", one_step);
-  position_color = color_recognition();
-  motorcontrol("M2", one_step * color_steps[position_color][1]);
-  motorcontrol("M1", one_step * color_steps[position_color][0]);
+  motorcontrol("M1", one_step); // Von Start zu Gold
   motorcontrol("M2", position_start);
-}
+  delay(500); // Kugel reinfallen lassen
+  motorcontrol("M2", one_step);
+  position_color = color_recognition();
+  Serial.print("Position: ");
+  Serial.println(position_color);
+  motorcontrol("M1", one_step * color_steps[position_color][1]);
+  motorcontrol("M2", one_step * color_steps[position_color][0]);
+  Serial.println("Bis hier geschafft, jetzt Unendlichkeit");
+  motorcontrol("M1", position_start);
+} 
+/*
+void loop(){
+  motorcontrol("M2", position_start);
+  Serial.println("Top");
+} */
 
 //---------------------------EIGENE METHODEN----------------------------------//
 // FARBERKENNUNG | PASCAL GLÄß
@@ -111,16 +120,16 @@ void motorcontrol(String _motor, int _position){
   if(_motor == "M1"){
     for(int i = 0; i<4; i++)
       active_motorpins[i] = motor1_pins[i];
-    active_light_barrier = light_barrier2;
+    active_light_barrier = light_barrier1;
   }
   else if(_motor == "M2"){
     for(int i = 0; i<4; i++)
       active_motorpins[i] = motor2_pins[i];
-      active_light_barrier = light_barrier2;
+      active_light_barrier = light_barrier1;
   }
 
   if(_position == position_start)
-    while(analogRead(active_light_barrier) <= 1){        // HIER WERT FINDEN, LICHTSCHRANKE
+    while(analogRead(active_light_barrier) >= 350){        // HIER WERT FINDEN, LICHTSCHRANKE
       move_motor();
     }
   else
